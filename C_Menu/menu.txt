@@ -1,0 +1,158 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+ 
+/* 菜单项结构体 */
+/* next为同级 */
+/* sub为子级 */
+typedef struct MenuItem
+{
+	char name[50];					/* 菜单项的名字 */
+	int MenuItemGrade;				/* 菜单项的级数 */
+	struct MenuItem *next;			/* 指向下一个菜单项的指针 */
+	struct MenuItem *back;			/* 指向上一个菜单项的指针 */
+	struct MenuItem *sub;			/* 指向该级子菜单项的指针 */
+	void (*action)();				/* 指向执行函数的指针 */
+}MenuItem;
+ 
+/* 全局声明 head 变量,作为菜单项的头指针 */
+MenuItem *head; 
+ 
+/* 创建菜单项 */
+/* char *name：为菜单项命名 */
+/* void(*action)()：指定该菜单项的运行函数 */
+/* int MenuItemGrade：规定菜单项的级数 */
+/* MenuItem *backMenu：该菜单项的上一级（父级）地址 */
+/* 返回值：MenuItem*：返回创建菜单项的地址 */
+MenuItem* createMenuItem(char *name, void(*action)(), int MenuItemGrade, MenuItem *backMenu)
+{
+	/* 使用 malloc 函数在堆上分配了一块内存，大小为 sizeof(MenuItem) 字节，   */
+	/* 然后将这块内存的地址强制转换为 MenuItem 类型，并将其赋值给 temp 变量。 */
+	MenuItem *temp = (MenuItem *)malloc(sizeof(MenuItem));
+ 
+	if (temp != NULL)
+	{
+		temp -> MenuItemGrade = MenuItemGrade;
+		temp -> back = backMenu;
+		strcpy(temp->name, name);
+		temp -> next = NULL;	/* 先不指定，再main()中指定 */
+		temp -> sub = NULL;		/* 先不指定，再main()中指定 */
+		temp -> action = action;
+	}
+	
+	return temp;
+} 
+ 
+/* 菜单操作函数 */
+/* MenuItem *currentMenu：最开始操作的菜单项的地址，一般是链表的表头 */
+void operateMenu(MenuItem *currentMenu)
+{
+	int choice;//按键传入数据
+	int i;
+	MenuItem *tempMenu = currentMenu;///将 tempMenu 指向 currentMenu 链表头部 */
+	/* 打印菜单项 */
+	printf("%d",currentMenu); 
+    while (tempMenu != NULL)
+    {
+        printf("%s\n", tempMenu->name);//显示选项，可以设定函数来显示 ，但是得重定义函数 
+        tempMenu = tempMenu->next;          
+    }
+	tempMenu = currentMenu;  
+	while (1){
+        scanf("%d", &choice);
+		switch(choice){
+			case 0:
+				tempMenu = currentMenu;
+				if (tempMenu->MenuItemGrade == 1) ;  	/* 设置退出标志 */ 
+        		else currentMenu = currentMenu->back;
+        		tempMenu = currentMenu;
+        		/* 打印菜单项 */
+			    while (tempMenu != NULL)
+			    {
+			        printf("%s\n", tempMenu->name);//显示选项，可以设定函数来显示 ，但是得重定义函数 
+			        tempMenu = tempMenu->next;          
+			    }
+			    tempMenu = currentMenu;
+				break;
+			case 1: 
+				if (tempMenu->sub != NULL) currentMenu = tempMenu->sub;
+				else tempMenu->action();
+				tempMenu = currentMenu;
+        		/* 打印菜单项 */
+			    while (tempMenu != NULL)
+			    {
+			        printf("%s\n", tempMenu->name);//显示选项，可以设定函数来显示 ，但是得重定义函数 
+			        tempMenu = tempMenu->next;         
+			    }
+			    tempMenu = currentMenu;
+				break;
+			case 2:
+				if(tempMenu->next != NULL) tempMenu = tempMenu->next;
+				else tempMenu = currentMenu;
+				break;
+		}
+	} 
+}
+ 
+/* 定义一些菜单项对应的执行函数 */
+/* 需遵循createMenuItem形参void (*action)()的形式 */
+ 
+/****************************************************************************/
+/* 1.在此填写要运行的函数 */ 
+ 
+/* 一级运行函数 */
+int k = 0;
+void action1(){printf("\nthis is action1\n");} 
+void action2(){printf("\nthis is action2\n");}
+ 
+/* 二级运行函数 */
+void action1_1(){printf("\nthis is action1-1\n");}
+void action2_1(){printf("\nthis is action2-1\n");}
+ 
+/* 三级运行函数 */
+void action1_1_1(){printf("\nthis is action1-1-1\n");}
+void action2_1_1(){printf("\nthis is action2-1-1\n");}
+ 
+/****************************************************************************/
+ 
+void operate_Menu()
+{
+	/* 创建菜单项 */
+	/* 对于有子项的菜单项可以没有运行函数 */
+	/* 因为对于菜单来说，真正有作用的是没有子项的菜单项，其余都是子项的索引项 */
+	
+	/****************************************************************************/
+	/* 2.在此多级菜单 */ 
+	
+	/* 创建一级菜单项 */
+ 	head = createMenuItem("Action 1", NULL, 1, NULL);
+    head -> next = createMenuItem("Action 2", NULL, 1, NULL);
+ 
+	/* 创建二级菜单项 */
+	head -> sub = createMenuItem("Action 1-1", NULL, 2, head);
+	head -> next -> sub = createMenuItem("Action 2-1", NULL, 2, head);
+	
+	/* 创建三级菜单项 */	
+	/* 因为上面二级菜单项已经创建了，所以head -> sub的sub又是一个新的MenuItem结构体 */
+	head -> sub -> sub = createMenuItem("Action 1-1-1", action1_1_1, 3, head -> sub);
+	head -> next -> sub -> sub = createMenuItem("Action 2-1-1", action2_1_1, 3, head -> next -> sub);
+	
+	
+	/****************************************************************************/
+	
+    /* 运行菜单系统 */ 
+    operateMenu(head);
+ 
+    /* 释放分配的内存 */ 
+    MenuItem *current = head;
+    while (current != NULL)
+    {
+        MenuItem* temp = current;
+        current = current->next;
+        free(temp);
+    }
+}
+int main(){
+	operate_Menu();
+	return 0;
+} 
